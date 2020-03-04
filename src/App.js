@@ -1,26 +1,54 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import Map from './Map';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class App extends React.Component {
+    constructor(props) {
+        super(props);
+        //initial state for australia map and cities as null
+        this.state = {
+            data: {
+                geoAusData: null,
+                geoAusCities: null
+            }
+        };
+    }
+
+    componentDidMount() {
+
+        Promise.all([
+            fetch("https://raw.githubusercontent.com/ahebwa49/geo_mapping/master/src/world_countries.json"),
+            fetch("https://raw.githubusercontent.com/AshKyd/leaflet-geojson-map-boilerplate/master/data/australia.cities.geo.json")
+        ])
+        .then(responses => Promise.all(responses.map(resp => resp.json())))
+        .then(([geoAusData, ausCitiesData]) => {
+            let geoAus = {
+                features: geoAusData.features.filter((feature) => {
+                    return feature.properties.name === 'Australia';
+                })
+            } 
+
+            let citiesToShow = {
+                features: ausCitiesData.features.filter((feature) => {
+                    return feature.properties.name === 'Sydney' || feature.properties.name === 'Melbourne';
+                })
+            }
+            //set state for australia map and cities
+            this.setState({
+                data: {
+                    geoAusData: geoAus,
+                    geoAusCities: citiesToShow
+                }
+            });
+        })
+        .catch(error => console.log(error));
+
+    }
+
+    render() {
+        const { data } = this.state;
+        return <div>{data.geoAusData && <Map data={data} />}</div>;
+    }
 }
 
 export default App;
